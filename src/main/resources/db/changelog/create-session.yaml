@@ -1,0 +1,26 @@
+databaseChangeLog:
+  - changeSet:
+      author: strupinski
+      id: 1
+      changes:
+        - createTable:
+            tableName: session
+            columns:
+              - column:
+                  name: id
+                  type: uuid
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: first_user_id
+                  type: varchar(64)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: second_user_id
+                  type: varchar(64)
+              - column:
+                  name: creation_date
+                  type: timestamp with time zone
+                  defaultValue: now()
