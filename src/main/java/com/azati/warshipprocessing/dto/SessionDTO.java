@@ -25,5 +25,4 @@ public class SessionDTO {
 
     @NonNull
     private Instant creationDate;
-
 }

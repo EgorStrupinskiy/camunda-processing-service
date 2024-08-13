@@ -1,0 +1,16 @@
+services:   
+  rabbitmq:
+    image: rabbitmq:management
+    container_name: rabbitmq 
+    hostname: rabbitmq
+    restart: unless-stopped
+    environment:
+      TZ: Europe/Moscow
+      RABBITMQ_DEFAULT_USER: demo
+      RABBITMQ_DEFAULT_PASS: demo
+      RABBITMQ_DEFAULT_VHOST: vhost
+    volumes:
+      - ./rabbitmq:/var/lib/rabbitmq￼    
+    ports:
+      - "5672:5672"
+      - "15672:15672"

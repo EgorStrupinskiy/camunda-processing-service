@@ -10,7 +10,7 @@ import java.util.List;
 @Mapper(componentModel = MappingConstants.ComponentModel.SPRING)
 public interface SessionMapper {
 
-    SessionDTO toDto(Session session);
+    SessionDTO toDTO(Session session);
 
     List<SessionDTO> toDTOList(List<Session> sessions);
 }
