@@ -35,42 +35,85 @@ public class SessionServiceTest {
     private SessionMapper sessionMapper;
 
     @Mock
+    private ProcessService processService;
+
+    @Mock
     private SessionRepository sessionRepository;
 
     @InjectMocks
     private SessionServiceImpl sessionService;
 
     @Test
-    void shouldCreateNewSessionSuccessfullyWhenThereAreNoOpenSessions() {
-        CreateSessionRequest request = new CreateSessionRequest(null, "userID");
-        Session session = new Session(UUID.randomUUID(), request.userId(), Instant.now());
+    void shouldCreateNewSessionWithOnePlayerSuccessfullyWhenThereAreNoOpenSessions() {
+        CreateSessionRequest request = new CreateSessionRequest(null, "userID", null);
+        Session session = new Session(UUID.randomUUID(), request.firstUserId(), Instant.now());
 
         when(sessionRepository.findOpenSessions()).thenReturn(List.of());
         when(sessionRepository.save(any(Session.class))).thenReturn(session);
-        when(sessionMapper.toDto(any(Session.class)))
+        when(sessionMapper.toDTO(any(Session.class)))
                 .thenReturn(new SessionDTO(session.getId(), session.getFirstUserId(), session.getSecondUserId(), session.getCreationDate()));
 
         SessionDTO sessionDTO = sessionService.create(request);
 
         assertNotNull(sessionDTO);
-        assertEquals(request.userId(), sessionDTO.getFirstUserId());
+        assertEquals(request.firstUserId(), sessionDTO.getFirstUserId());
         assertNull(sessionDTO.getSecondUserId());
 
         verify(sessionRepository, times(1)).findOpenSessions();
         verify(sessionRepository, times(1)).save(any(Session.class));
-        verify(sessionMapper, times(1)).toDto(any(Session.class));
+        verify(sessionMapper, times(1)).toDTO(any(Session.class));
+    }
+
+    @Test
+    void shouldCreateNewSessionWithTwoPlayersWithoutSessionIdSuccessfully() {
+        CreateSessionRequest request = new CreateSessionRequest(null, "firstUserId", "firstUserId");
+        Session session = new Session(UUID.randomUUID(), request.firstUserId(), request.secondUserId(), Instant.now());
+
+        when(sessionRepository.save(any(Session.class))).thenReturn(session);
+        when(sessionMapper.toDTO(any(Session.class)))
+                .thenReturn(new SessionDTO(session.getId(), session.getFirstUserId(), session.getSecondUserId(), session.getCreationDate()));
+
+        SessionDTO sessionDTO = sessionService.create(request);
+
+        assertNotNull(sessionDTO);
+        assertEquals(request.firstUserId(), sessionDTO.getFirstUserId());
+        assertEquals(request.secondUserId(), sessionDTO.getSecondUserId());
+
+        verify(sessionRepository, times(0)).findOpenSessions();
+        verify(sessionRepository, times(1)).save(any(Session.class));
+        verify(sessionMapper, times(1)).toDTO(any(Session.class));
+    }
+
+    @Test
+    void shouldCreateNewSessionWithTwoPlayersWithSessionIdSuccessfully() {
+        CreateSessionRequest request = new CreateSessionRequest(UUID.randomUUID(), "firstUserId", "firstUserId");
+        Session session = new Session(UUID.randomUUID(), request.firstUserId(), request.secondUserId(), Instant.now());
+
+        when(sessionRepository.save(any(Session.class))).thenReturn(session);
+        when(sessionMapper.toDTO(any(Session.class)))
+                .thenReturn(new SessionDTO(session.getId(), session.getFirstUserId(), session.getSecondUserId(), session.getCreationDate()));
+
+        SessionDTO sessionDTO = sessionService.create(request);
+
+        assertNotNull(sessionDTO);
+        assertEquals(request.firstUserId(), sessionDTO.getFirstUserId());
+        assertEquals(request.secondUserId(), sessionDTO.getSecondUserId());
+
+        verify(sessionRepository, times(0)).findOpenSessions();
+        verify(sessionRepository, times(1)).save(any(Session.class));
+        verify(sessionMapper, times(1)).toDTO(any(Session.class));
     }
 
     @Test
     void shouldConnectToSessionSuccessfullyWhenThereAreOpenSessions() {
-        CreateSessionRequest request = new CreateSessionRequest(null, "firstUserId");
+        CreateSessionRequest request = new CreateSessionRequest(null, "firstUserId", null);
         var existedSession = new Session(UUID.randomUUID(), "existedUserId", Instant.now());
-        existedSession.setSecondUserId(request.userId());
+        existedSession.setSecondUserId(request.firstUserId());
 
         when(sessionRepository.findOpenSessions())
                 .thenReturn(List.of(existedSession));
         when(sessionRepository.save(any(Session.class))).thenReturn(existedSession);
-        when(sessionMapper.toDto(any(Session.class)))
+        when(sessionMapper.toDTO(any(Session.class)))
                 .thenReturn(new SessionDTO(existedSession.getId(), existedSession.getFirstUserId(), existedSession.getSecondUserId(), existedSession.getCreationDate()));
 
         SessionDTO sessionDTO = sessionService.create(request);
@@ -82,12 +125,12 @@ public class SessionServiceTest {
 
         verify(sessionRepository, times(1)).findOpenSessions();
         verify(sessionRepository, times(1)).save(any(Session.class));
-        verify(sessionMapper, times(1)).toDto(any(Session.class));
+        verify(sessionMapper, times(1)).toDTO(any(Session.class));
     }
 
     @Test
     void shouldThrowExceptionWhileConnectionWhenThereIsNoSessionWithId() {
-        CreateSessionRequest request = new CreateSessionRequest(UUID.randomUUID(), "firstUserId");
+        CreateSessionRequest request = new CreateSessionRequest(UUID.randomUUID(), "firstUserId", null);
 
         Mockito.when(sessionRepository.findById(request.sessionId()))
                 .thenReturn(Optional.empty());
@@ -98,14 +141,14 @@ public class SessionServiceTest {
 
     @Test
     void shouldConnectToSessionByIdSuccessfully() {
-        CreateSessionRequest request = new CreateSessionRequest(UUID.randomUUID(), "firstUserId");
+        CreateSessionRequest request = new CreateSessionRequest(UUID.randomUUID(), "firstUserId", null);
         var existedSession = new Session(request.sessionId(), "existedUserId", Instant.now());
-        existedSession.setSecondUserId(request.userId());
+        existedSession.setSecondUserId(request.firstUserId());
 
         when(sessionRepository.findById(request.sessionId()))
                 .thenReturn(Optional.of(existedSession));
         when(sessionRepository.save(any(Session.class))).thenReturn(existedSession);
-        when(sessionMapper.toDto(any(Session.class)))
+        when(sessionMapper.toDTO(any(Session.class)))
                 .thenReturn(new SessionDTO(existedSession.getId(), existedSession.getFirstUserId(), existedSession.getSecondUserId(), existedSession.getCreationDate()));
 
         SessionDTO sessionDTO = sessionService.create(request);
@@ -117,7 +160,7 @@ public class SessionServiceTest {
 
         verify(sessionRepository, times(1)).findById(any(UUID.class));
         verify(sessionRepository, times(1)).save(any(Session.class));
-        verify(sessionMapper, times(1)).toDto(any(Session.class));
+        verify(sessionMapper, times(1)).toDTO(any(Session.class));
     }
 
     @Test
@@ -163,7 +206,7 @@ public class SessionServiceTest {
 
         when(sessionRepository.findById(any(UUID.class)))
                 .thenReturn(Optional.of(existedSession));
-        when(sessionMapper.toDto(any(Session.class)))
+        when(sessionMapper.toDTO(any(Session.class)))
                 .thenReturn(new SessionDTO(existedSession.getId(), existedSession.getFirstUserId(),
                         existedSession.getSecondUserId(), existedSession.getCreationDate()));
 
@@ -172,7 +215,7 @@ public class SessionServiceTest {
         assertEquals("existedSecondUserId", session.getSecondUserId());
 
         verify(sessionRepository, times(1)).findById(any(UUID.class));
-        verify(sessionMapper, times(1)).toDto(any(Session.class));
+        verify(sessionMapper, times(1)).toDTO(any(Session.class));
     }
 
     @Test

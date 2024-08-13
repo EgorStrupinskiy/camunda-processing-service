@@ -1,0 +1,389 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:camunda="http://camunda.org/schema/1.0/bpmn" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" id="Definitions_0fr9mxs" targetNamespace="http://bpmn.io/schema/bpmn" exporter="Camunda Modeler" exporterVersion="5.25.0">
+  <bpmn:process id="warship-battle-process" name="Warshing battle processing" isExecutable="true" camunda:historyTimeToLive="180">
+    <bpmn:extensionElements />
+    <bpmn:startEvent id="StartEvent_1">
+      <bpmn:outgoing>SequenceFlow_1fp17al</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:sequenceFlow id="SequenceFlow_1fp17al" sourceRef="StartEvent_1" targetRef="ChooseFirstTurnActivity" />
+    <bpmn:endEvent id="EndEvent_0x6ir2l" name="End of the game">
+      <bpmn:incoming>Flow_0fciri7</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:serviceTask id="ChooseFirstTurnActivity" name="Choose first turn" camunda:class="com.azati.warshipprocessing.action.ChooseFirstTurnAction">
+      <bpmn:extensionElements />
+      <bpmn:incoming>SequenceFlow_1fp17al</bpmn:incoming>
+      <bpmn:outgoing>Flow_0rkqh4p</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:sequenceFlow id="Flow_0rkqh4p" sourceRef="ChooseFirstTurnActivity" targetRef="Gateway_1xxnsf0" />
+    <bpmn:sequenceFlow id="Flow_0p94bri" sourceRef="WaitForShotActivity" targetRef="CheckTurnGateway" />
+    <bpmn:sendTask id="SendShotRequestActivity" name="Send shot request" camunda:class="com.azati.warshipprocessing.action.SendShotRequestAction">
+      <bpmn:extensionElements />
+      <bpmn:incoming>Flow_0evesl4</bpmn:incoming>
+      <bpmn:outgoing>Flow_1c9e8o1</bpmn:outgoing>
+    </bpmn:sendTask>
+    <bpmn:receiveTask id="WaitForShotActivity" name="Wait for shot" messageRef="request-message">
+      <bpmn:incoming>Flow_0m9ecx2</bpmn:incoming>
+      <bpmn:outgoing>Flow_0p94bri</bpmn:outgoing>
+    </bpmn:receiveTask>
+    <bpmn:exclusiveGateway id="HitGateway" name="Did the Player hit the target?">
+      <bpmn:incoming>Flow_0rn2w92</bpmn:incoming>
+      <bpmn:outgoing>MissFlow</bpmn:outgoing>
+      <bpmn:outgoing>HitFlow</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:sequenceFlow id="MissFlow" name="No" sourceRef="HitGateway" targetRef="ChangeTurnActivity">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">#{status=='miss'}</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sendTask id="ResendShotActivity" name="Resend shot to another player" camunda:class="com.azati.warshipprocessing.action.ResendShotAction">
+      <bpmn:incoming>Flow_0b4ock2</bpmn:incoming>
+      <bpmn:outgoing>Flow_166zxbo</bpmn:outgoing>
+    </bpmn:sendTask>
+    <bpmn:sequenceFlow id="Flow_0dc6ury" sourceRef="WaitForResponseActivity" targetRef="Gateway_10b42u0" />
+    <bpmn:receiveTask id="WaitForResponseActivity" name="Wait for response" messageRef="response-message">
+      <bpmn:incoming>Flow_0uabe76</bpmn:incoming>
+      <bpmn:outgoing>Flow_0dc6ury</bpmn:outgoing>
+    </bpmn:receiveTask>
+    <bpmn:sendTask id="SendResponseActivity" name="Send response to shooter" camunda:class="com.azati.warshipprocessing.action.SendResponseToShooterAction">
+      <bpmn:incoming>Flow_0lttbct</bpmn:incoming>
+      <bpmn:outgoing>Flow_0rn2w92</bpmn:outgoing>
+    </bpmn:sendTask>
+    <bpmn:sequenceFlow id="Flow_05nv9xa" sourceRef="Gateway_0ay4hnj" targetRef="Gateway_1xxnsf0" />
+    <bpmn:exclusiveGateway id="Gateway_1xxnsf0">
+      <bpmn:incoming>Flow_05nv9xa</bpmn:incoming>
+      <bpmn:incoming>Flow_0rkqh4p</bpmn:incoming>
+      <bpmn:outgoing>Flow_0evesl4</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:exclusiveGateway id="CheckTurnGateway" name="Check if it`s this user turn">
+      <bpmn:incoming>Flow_0p94bri</bpmn:incoming>
+      <bpmn:outgoing>IncorrectTurnFlow</bpmn:outgoing>
+      <bpmn:outgoing>Flow_0b4ock2</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:sequenceFlow id="Flow_166zxbo" sourceRef="ResendShotActivity" targetRef="Gateway_1ufu3ot" />
+    <bpmn:sequenceFlow id="IncorrectTurnFlow" name="Incorrect user turn" sourceRef="CheckTurnGateway" targetRef="SendExceptionActivity">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression" language="groovy">def receivedMessageUserId = execution.getVariable("receivedMessageUserId")
+def activeUserId = execution.getVariable("activeUserId")
+
+def result = receivedMessageUserId != activeUserId
+</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_0b4ock2" sourceRef="CheckTurnGateway" targetRef="ResendShotActivity">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression" language="groovy">def receivedMessageUserId = execution.getVariable("receivedMessageUserId")
+def activeUserId = execution.getVariable("activeUserId")
+
+def result = receivedMessageUserId == activeUserId
+</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_1c9e8o1" sourceRef="SendShotRequestActivity" targetRef="Gateway_1e9u6e1" />
+    <bpmn:sequenceFlow id="Flow_0evesl4" sourceRef="Gateway_1xxnsf0" targetRef="SendShotRequestActivity" />
+    <bpmn:exclusiveGateway id="Gateway_10b42u0" name="Check if it`s this user turn">
+      <bpmn:incoming>Flow_0dc6ury</bpmn:incoming>
+      <bpmn:outgoing>Flow_0otykde</bpmn:outgoing>
+      <bpmn:outgoing>Flow_0vl1vd8</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:sequenceFlow id="Flow_0otykde" sourceRef="Gateway_10b42u0" targetRef="Gateway_0e43r0j">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression" language="groovy">def receivedMessageUserId = execution.getVariable("receivedMessageUserId")
+def passiveUserId = execution.getVariable("passiveUserId")
+
+def result = receivedMessageUserId == passiveUserId
+</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_0vl1vd8" sourceRef="Gateway_10b42u0" targetRef="Activity_090edy5">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression" language="groovy">def receivedMessageUserId = execution.getVariable("receivedMessageUserId")
+def passiveUserId = execution.getVariable("passiveUserId")
+
+def result = receivedMessageUserId != passiveUserId
+</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_0fciri7" sourceRef="GameOverActivity" targetRef="EndEvent_0x6ir2l" />
+    <bpmn:sendTask id="SendExceptionActivity" name="Send exception message to user" camunda:class="com.azati.warshipprocessing.action.SendExceptionAction">
+      <bpmn:incoming>IncorrectTurnFlow</bpmn:incoming>
+      <bpmn:incoming>Flow_062c5wc</bpmn:incoming>
+      <bpmn:outgoing>Flow_05rzm89</bpmn:outgoing>
+    </bpmn:sendTask>
+    <bpmn:sequenceFlow id="Flow_05rzm89" sourceRef="SendExceptionActivity" targetRef="Gateway_1e9u6e1" />
+    <bpmn:sequenceFlow id="Flow_1ovfjn7" sourceRef="ChangeTurnActivity" targetRef="Gateway_0ay4hnj" />
+    <bpmn:sequenceFlow id="HitFlow" sourceRef="HitGateway" targetRef="Gateway_0ay4hnj">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">#{status=='hit'}</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sendTask id="GameOverActivity" name="Send GameOver message to players" camunda:class="com.azati.warshipprocessing.action.GameOverAction">
+      <bpmn:incoming>Flow_09wem7q</bpmn:incoming>
+      <bpmn:outgoing>Flow_0fciri7</bpmn:outgoing>
+    </bpmn:sendTask>
+    <bpmn:sequenceFlow id="Flow_09wem7q" sourceRef="Gateway_0e43r0j" targetRef="GameOverActivity">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">#{status=="gameOver"}</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:exclusiveGateway id="Gateway_1e9u6e1">
+      <bpmn:incoming>Flow_1c9e8o1</bpmn:incoming>
+      <bpmn:incoming>Flow_05rzm89</bpmn:incoming>
+      <bpmn:outgoing>Flow_0m9ecx2</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:sequenceFlow id="Flow_0m9ecx2" sourceRef="Gateway_1e9u6e1" targetRef="WaitForShotActivity" />
+    <bpmn:sendTask id="Activity_090edy5" name="Send exception message to user" camunda:class="com.azati.warshipprocessing.action.SendExceptionAction">
+      <bpmn:incoming>Flow_0vl1vd8</bpmn:incoming>
+      <bpmn:incoming>Flow_00n8tvw</bpmn:incoming>
+      <bpmn:outgoing>Flow_0mq4t22</bpmn:outgoing>
+    </bpmn:sendTask>
+    <bpmn:sequenceFlow id="Flow_0mq4t22" sourceRef="Activity_090edy5" targetRef="Gateway_1ufu3ot" />
+    <bpmn:exclusiveGateway id="Gateway_1ufu3ot">
+      <bpmn:incoming>Flow_166zxbo</bpmn:incoming>
+      <bpmn:incoming>Flow_0mq4t22</bpmn:incoming>
+      <bpmn:outgoing>Flow_0uabe76</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:sequenceFlow id="Flow_0uabe76" sourceRef="Gateway_1ufu3ot" targetRef="WaitForResponseActivity" />
+    <bpmn:scriptTask id="ChangeTurnActivity" name="Change turn" scriptFormat="groovy">
+      <bpmn:extensionElements>
+        <camunda:executionListener class="com.azati.warshipprocessing.action.ChangeTurnListener" event="end" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>MissFlow</bpmn:incoming>
+      <bpmn:outgoing>Flow_1ovfjn7</bpmn:outgoing>
+      <bpmn:script>def temp = execution.getVariable("activeUserId")
+def activeUserId = execution.getVariable("activeUserId")
+def passiveUserId = execution.getVariable("passiveUserId")
+
+execution.setVariable("activeUserId", passiveUserId)
+execution.setVariable("passiveUserId", temp)</bpmn:script>
+    </bpmn:scriptTask>
+    <bpmn:exclusiveGateway id="Gateway_0ay4hnj">
+      <bpmn:incoming>HitFlow</bpmn:incoming>
+      <bpmn:incoming>Flow_1ovfjn7</bpmn:incoming>
+      <bpmn:outgoing>Flow_05nv9xa</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:sequenceFlow id="Flow_0rn2w92" sourceRef="SendResponseActivity" targetRef="HitGateway" />
+    <bpmn:sequenceFlow id="Flow_062c5wc" name="Incorrect&#10;User&#10;Request" sourceRef="WrongSignalRequestForShotEvent" targetRef="SendExceptionActivity" />
+    <bpmn:sequenceFlow id="Flow_00n8tvw" sourceRef="Event_1rhrb33" targetRef="Activity_090edy5" />
+    <bpmn:exclusiveGateway id="Gateway_0e43r0j" name="Is it gameOver?">
+      <bpmn:incoming>Flow_0otykde</bpmn:incoming>
+      <bpmn:outgoing>Flow_0lttbct</bpmn:outgoing>
+      <bpmn:outgoing>Flow_09wem7q</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:sequenceFlow id="Flow_0lttbct" sourceRef="Gateway_0e43r0j" targetRef="SendResponseActivity">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">#{status!="gameOver"}</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:boundaryEvent id="WrongSignalRequestForShotEvent" attachedToRef="WaitForShotActivity">
+      <bpmn:outgoing>Flow_062c5wc</bpmn:outgoing>
+      <bpmn:messageEventDefinition id="MessageEventDefinition_0kwrkjs" messageRef="wrong-request-type" />
+    </bpmn:boundaryEvent>
+    <bpmn:boundaryEvent id="Event_1rhrb33" attachedToRef="WaitForResponseActivity">
+      <bpmn:outgoing>Flow_00n8tvw</bpmn:outgoing>
+      <bpmn:messageEventDefinition id="MessageEventDefinition_0oz2x4m" messageRef="wrong-request-type" />
+    </bpmn:boundaryEvent>
+  </bpmn:process>
+  <bpmn:message id="response-message" name="shot-response" />
+  <bpmn:message id="request-message" name="shot-request" />
+  <bpmn:message id="game-over-message" name="game-over-message" />
+  <bpmn:message id="wrong-request-type" name="wrong-request-type" />
+  <bpmn:error id="Error_1dnqbqn" name="request-error" />
+  <bpmn:error id="Error_1uhhb5k" name="request-error" />
+  <bpmn:signal id="WrongRequestSignal" name="WrongRequestSignal" />
+  <bpmndi:BPMNDiagram id="BPMNDiagram_1">
+    <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="warship-battle-process">
+      <bpmndi:BPMNShape id="EndEvent_0x6ir2l_di" bpmnElement="EndEvent_0x6ir2l">
+        <dc:Bounds x="1392" y="102" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1369" y="78" width="81" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_0c3ui3z_di" bpmnElement="SendExceptionActivity">
+        <dc:Bounds x="630" y="210" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="BPMNShape_0rwzru8" bpmnElement="Activity_090edy5">
+        <dc:Bounds x="1100" y="210" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_123q8l5_di" bpmnElement="ChangeTurnActivity">
+        <dc:Bounds x="1670" y="210" width="100" height="80" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="_BPMNShape_StartEvent_2" bpmnElement="StartEvent_1">
+        <dc:Bounds x="152" y="359" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_1q2ck8f_di" bpmnElement="ChooseFirstTurnActivity">
+        <dc:Bounds x="220" y="337" width="100" height="80" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_0zakzxx_di" bpmnElement="SendShotRequestActivity">
+        <dc:Bounds x="440" y="337" width="100" height="80" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_1xxnsf0_di" bpmnElement="Gateway_1xxnsf0" isMarkerVisible="true">
+        <dc:Bounds x="355" y="352" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_1e9u6e1_di" bpmnElement="Gateway_1e9u6e1" isMarkerVisible="true">
+        <dc:Bounds x="585" y="352" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_07qt26u_di" bpmnElement="WaitForShotActivity">
+        <dc:Bounds x="690" y="337" width="100" height="80" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_12oj1se_di" bpmnElement="CheckTurnGateway" isMarkerVisible="true">
+        <dc:Bounds x="825" y="352" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="813" y="409" width="78" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_0chunpy_di" bpmnElement="ResendShotActivity">
+        <dc:Bounds x="910" y="337" width="100" height="80" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_1upyrgt_di" bpmnElement="WaitForResponseActivity">
+        <dc:Bounds x="1160" y="337" width="100" height="80" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="BPMNShape_1cfnmej" bpmnElement="Gateway_10b42u0" isMarkerVisible="true">
+        <dc:Bounds x="1285" y="352" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1273" y="409" width="78" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_1ufu3ot_di" bpmnElement="Gateway_1ufu3ot" isMarkerVisible="true">
+        <dc:Bounds x="1045" y="352" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_0e43r0j_di" bpmnElement="Gateway_0e43r0j" isMarkerVisible="true">
+        <dc:Bounds x="1385" y="352" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1373" y="409" width="78" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_11ldxka_di" bpmnElement="HitGateway" isMarkerVisible="true">
+        <dc:Bounds x="1605" y="352" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1588" y="412" width="84" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="BPMNShape_0i0fbb7" bpmnElement="SendResponseActivity">
+        <dc:Bounds x="1480" y="337" width="100" height="80" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_0ay4hnj_di" bpmnElement="Gateway_0ay4hnj" isMarkerVisible="true">
+        <dc:Bounds x="1785" y="352" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="BPMNShape_0bmu7ec" bpmnElement="GameOverActivity">
+        <dc:Bounds x="1360" y="210" width="100" height="80" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_1oz4h0j_di" bpmnElement="WrongSignalRequestForShotEvent">
+        <dc:Bounds x="742" y="319" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_14nv79i_di" bpmnElement="Event_1rhrb33">
+        <dc:Bounds x="1212" y="319" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="SequenceFlow_1fp17al_di" bpmnElement="SequenceFlow_1fp17al">
+        <di:waypoint x="188" y="377" />
+        <di:waypoint x="220" y="377" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_0rkqh4p_di" bpmnElement="Flow_0rkqh4p">
+        <di:waypoint x="320" y="377" />
+        <di:waypoint x="355" y="377" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_0p94bri_di" bpmnElement="Flow_0p94bri">
+        <di:waypoint x="790" y="377" />
+        <di:waypoint x="825" y="377" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_1drah2o_di" bpmnElement="MissFlow">
+        <di:waypoint x="1630" y="352" />
+        <di:waypoint x="1630" y="250" />
+        <di:waypoint x="1670" y="250" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1633" y="226" width="15" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_0dc6ury_di" bpmnElement="Flow_0dc6ury">
+        <di:waypoint x="1260" y="377" />
+        <di:waypoint x="1285" y="377" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_05nv9xa_di" bpmnElement="Flow_05nv9xa">
+        <di:waypoint x="1810" y="402" />
+        <di:waypoint x="1810" y="490" />
+        <di:waypoint x="380" y="490" />
+        <di:waypoint x="380" y="402" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_166zxbo_di" bpmnElement="Flow_166zxbo">
+        <di:waypoint x="1010" y="377" />
+        <di:waypoint x="1045" y="377" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_13jakkf_di" bpmnElement="IncorrectTurnFlow">
+        <di:waypoint x="850" y="352" />
+        <di:waypoint x="850" y="250" />
+        <di:waypoint x="730" y="250" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="745" y="226" width="90" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_0b4ock2_di" bpmnElement="Flow_0b4ock2">
+        <di:waypoint x="875" y="377" />
+        <di:waypoint x="910" y="377" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_1c9e8o1_di" bpmnElement="Flow_1c9e8o1">
+        <di:waypoint x="540" y="377" />
+        <di:waypoint x="585" y="377" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_0evesl4_di" bpmnElement="Flow_0evesl4">
+        <di:waypoint x="405" y="377" />
+        <di:waypoint x="440" y="377" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_0otykde_di" bpmnElement="Flow_0otykde">
+        <di:waypoint x="1335" y="377" />
+        <di:waypoint x="1385" y="377" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_0vl1vd8_di" bpmnElement="Flow_0vl1vd8">
+        <di:waypoint x="1310" y="352" />
+        <di:waypoint x="1310" y="250" />
+        <di:waypoint x="1200" y="250" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_0fciri7_di" bpmnElement="Flow_0fciri7">
+        <di:waypoint x="1410" y="210" />
+        <di:waypoint x="1410" y="138" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_05rzm89_di" bpmnElement="Flow_05rzm89">
+        <di:waypoint x="630" y="250" />
+        <di:waypoint x="610" y="250" />
+        <di:waypoint x="610" y="352" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_1ovfjn7_di" bpmnElement="Flow_1ovfjn7">
+        <di:waypoint x="1770" y="250" />
+        <di:waypoint x="1810" y="250" />
+        <di:waypoint x="1810" y="352" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_11bsjwn_di" bpmnElement="HitFlow">
+        <di:waypoint x="1655" y="377" />
+        <di:waypoint x="1785" y="377" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_09wem7q_di" bpmnElement="Flow_09wem7q">
+        <di:waypoint x="1410" y="352" />
+        <di:waypoint x="1410" y="290" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_0m9ecx2_di" bpmnElement="Flow_0m9ecx2">
+        <di:waypoint x="635" y="377" />
+        <di:waypoint x="690" y="377" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_0mq4t22_di" bpmnElement="Flow_0mq4t22">
+        <di:waypoint x="1100" y="250" />
+        <di:waypoint x="1070" y="250" />
+        <di:waypoint x="1070" y="352" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_0uabe76_di" bpmnElement="Flow_0uabe76">
+        <di:waypoint x="1095" y="377" />
+        <di:waypoint x="1160" y="377" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_0rn2w92_di" bpmnElement="Flow_0rn2w92">
+        <di:waypoint x="1580" y="377" />
+        <di:waypoint x="1605" y="377" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_062c5wc_di" bpmnElement="Flow_062c5wc">
+        <di:waypoint x="760" y="319" />
+        <di:waypoint x="760" y="250" />
+        <di:waypoint x="730" y="250" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="768" y="275" width="43" height="40" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_00n8tvw_di" bpmnElement="Flow_00n8tvw">
+        <di:waypoint x="1230" y="319" />
+        <di:waypoint x="1230" y="250" />
+        <di:waypoint x="1200" y="250" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_0lttbct_di" bpmnElement="Flow_0lttbct">
+        <di:waypoint x="1435" y="377" />
+        <di:waypoint x="1480" y="377" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>

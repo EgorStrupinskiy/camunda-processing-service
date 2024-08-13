@@ -39,7 +39,7 @@ class SessionControllerTest {
 
     @BeforeEach
     void setUp() {
-        createSessionRequest = new CreateSessionRequest(null, "firstUserId");
+        createSessionRequest = new CreateSessionRequest(null, "firstUserId", null);
         sessionDTO = new SessionDTO(UUID.randomUUID(), "firstUserId", "secondUserId", Instant.now());
     }
 
@@ -71,7 +71,7 @@ class SessionControllerTest {
     }
 
     @Test
-    void shouldGetAllSessionSuccessfully() throws Exception {
+    void shouldGetAllSessionsSuccessfully() throws Exception {
         Mockito.when(sessionService.getAll()).thenReturn(List.of(sessionDTO));
 
         mockMvc.perform(get("/sessions")
@@ -84,7 +84,7 @@ class SessionControllerTest {
     }
 
     @Test
-    void shouldGetAllOpenSessionSuccessfully() throws Exception {
+    void shouldGetAllOpenSessionsSuccessfully() throws Exception {
         Mockito.when(sessionService.getOpen()).thenReturn(List.of(sessionDTO));
 
         mockMvc.perform(get("/sessions/open")
