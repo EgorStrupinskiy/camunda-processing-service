@@ -86,7 +86,7 @@ def passiveUserId = execution.getVariable("passiveUserId")
 def result = receivedMessageUserId == passiveUserId
 </bpmn:conditionExpression>
     </bpmn:sequenceFlow>
-    <bpmn:sequenceFlow id="Flow_0vl1vd8" sourceRef="Gateway_10b42u0" targetRef="Activity_090edy5">
+    <bpmn:sequenceFlow id="Flow_0vl1vd8" name="Incorrect user turn" sourceRef="Gateway_10b42u0" targetRef="Activity_090edy5">
       <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression" language="groovy">def receivedMessageUserId = execution.getVariable("receivedMessageUserId")
 def passiveUserId = execution.getVariable("passiveUserId")
 
@@ -149,7 +149,7 @@ execution.setVariable("passiveUserId", temp)</bpmn:script>
     </bpmn:exclusiveGateway>
     <bpmn:sequenceFlow id="Flow_0rn2w92" sourceRef="SendResponseActivity" targetRef="HitGateway" />
     <bpmn:sequenceFlow id="Flow_062c5wc" name="Incorrect&#10;User&#10;Request" sourceRef="WrongSignalRequestForShotEvent" targetRef="SendExceptionActivity" />
-    <bpmn:sequenceFlow id="Flow_00n8tvw" sourceRef="Event_1rhrb33" targetRef="Activity_090edy5" />
+    <bpmn:sequenceFlow id="Flow_00n8tvw" name="Incorrect&#10;User&#10;Request" sourceRef="Event_1rhrb33" targetRef="Activity_090edy5" />
     <bpmn:exclusiveGateway id="Gateway_0e43r0j" name="Is it gameOver?">
       <bpmn:incoming>Flow_0otykde</bpmn:incoming>
       <bpmn:outgoing>Flow_0lttbct</bpmn:outgoing>
@@ -176,24 +176,14 @@ execution.setVariable("passiveUserId", temp)</bpmn:script>
   <bpmn:signal id="WrongRequestSignal" name="WrongRequestSignal" />
   <bpmndi:BPMNDiagram id="BPMNDiagram_1">
     <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="warship-battle-process">
+      <bpmndi:BPMNShape id="_BPMNShape_StartEvent_2" bpmnElement="StartEvent_1">
+        <dc:Bounds x="152" y="359" width="36" height="36" />
+      </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="EndEvent_0x6ir2l_di" bpmnElement="EndEvent_0x6ir2l">
         <dc:Bounds x="1392" y="102" width="36" height="36" />
         <bpmndi:BPMNLabel>
           <dc:Bounds x="1369" y="78" width="81" height="14" />
         </bpmndi:BPMNLabel>
-      </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Activity_0c3ui3z_di" bpmnElement="SendExceptionActivity">
-        <dc:Bounds x="630" y="210" width="100" height="80" />
-      </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="BPMNShape_0rwzru8" bpmnElement="Activity_090edy5">
-        <dc:Bounds x="1100" y="210" width="100" height="80" />
-      </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Activity_123q8l5_di" bpmnElement="ChangeTurnActivity">
-        <dc:Bounds x="1670" y="210" width="100" height="80" />
-        <bpmndi:BPMNLabel />
-      </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="_BPMNShape_StartEvent_2" bpmnElement="StartEvent_1">
-        <dc:Bounds x="152" y="359" width="36" height="36" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Activity_1q2ck8f_di" bpmnElement="ChooseFirstTurnActivity">
         <dc:Bounds x="220" y="337" width="100" height="80" />
@@ -203,20 +193,14 @@ execution.setVariable("passiveUserId", temp)</bpmn:script>
         <dc:Bounds x="440" y="337" width="100" height="80" />
         <bpmndi:BPMNLabel />
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Gateway_1xxnsf0_di" bpmnElement="Gateway_1xxnsf0" isMarkerVisible="true">
-        <dc:Bounds x="355" y="352" width="50" height="50" />
-      </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Gateway_1e9u6e1_di" bpmnElement="Gateway_1e9u6e1" isMarkerVisible="true">
-        <dc:Bounds x="585" y="352" width="50" height="50" />
-      </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Activity_07qt26u_di" bpmnElement="WaitForShotActivity">
         <dc:Bounds x="690" y="337" width="100" height="80" />
         <bpmndi:BPMNLabel />
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Gateway_12oj1se_di" bpmnElement="CheckTurnGateway" isMarkerVisible="true">
-        <dc:Bounds x="825" y="352" width="50" height="50" />
+      <bpmndi:BPMNShape id="Gateway_11ldxka_di" bpmnElement="HitGateway" isMarkerVisible="true">
+        <dc:Bounds x="1605" y="352" width="50" height="50" />
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="813" y="409" width="78" height="27" />
+          <dc:Bounds x="1588" y="412" width="84" height="27" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Activity_0chunpy_di" bpmnElement="ResendShotActivity">
@@ -227,14 +211,47 @@ execution.setVariable("passiveUserId", temp)</bpmn:script>
         <dc:Bounds x="1160" y="337" width="100" height="80" />
         <bpmndi:BPMNLabel />
       </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="BPMNShape_0i0fbb7" bpmnElement="SendResponseActivity">
+        <dc:Bounds x="1480" y="337" width="100" height="80" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_1xxnsf0_di" bpmnElement="Gateway_1xxnsf0" isMarkerVisible="true">
+        <dc:Bounds x="355" y="352" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_12oj1se_di" bpmnElement="CheckTurnGateway" isMarkerVisible="true">
+        <dc:Bounds x="825" y="352" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="813" y="409" width="78" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="BPMNShape_1cfnmej" bpmnElement="Gateway_10b42u0" isMarkerVisible="true">
         <dc:Bounds x="1285" y="352" width="50" height="50" />
         <bpmndi:BPMNLabel>
           <dc:Bounds x="1273" y="409" width="78" height="27" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_0c3ui3z_di" bpmnElement="SendExceptionActivity">
+        <dc:Bounds x="630" y="210" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="BPMNShape_0bmu7ec" bpmnElement="GameOverActivity">
+        <dc:Bounds x="1360" y="210" width="100" height="80" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_1e9u6e1_di" bpmnElement="Gateway_1e9u6e1" isMarkerVisible="true">
+        <dc:Bounds x="585" y="352" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="BPMNShape_0rwzru8" bpmnElement="Activity_090edy5">
+        <dc:Bounds x="1100" y="210" width="100" height="80" />
+      </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Gateway_1ufu3ot_di" bpmnElement="Gateway_1ufu3ot" isMarkerVisible="true">
         <dc:Bounds x="1045" y="352" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_123q8l5_di" bpmnElement="ChangeTurnActivity">
+        <dc:Bounds x="1670" y="210" width="100" height="80" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_0ay4hnj_di" bpmnElement="Gateway_0ay4hnj" isMarkerVisible="true">
+        <dc:Bounds x="1785" y="352" width="50" height="50" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Gateway_0e43r0j_di" bpmnElement="Gateway_0e43r0j" isMarkerVisible="true">
         <dc:Bounds x="1385" y="352" width="50" height="50" />
@@ -242,28 +259,11 @@ execution.setVariable("passiveUserId", temp)</bpmn:script>
           <dc:Bounds x="1373" y="409" width="78" height="14" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Gateway_11ldxka_di" bpmnElement="HitGateway" isMarkerVisible="true">
-        <dc:Bounds x="1605" y="352" width="50" height="50" />
-        <bpmndi:BPMNLabel>
-          <dc:Bounds x="1588" y="412" width="84" height="27" />
-        </bpmndi:BPMNLabel>
-      </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="BPMNShape_0i0fbb7" bpmnElement="SendResponseActivity">
-        <dc:Bounds x="1480" y="337" width="100" height="80" />
-        <bpmndi:BPMNLabel />
-      </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Gateway_0ay4hnj_di" bpmnElement="Gateway_0ay4hnj" isMarkerVisible="true">
-        <dc:Bounds x="1785" y="352" width="50" height="50" />
-      </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="BPMNShape_0bmu7ec" bpmnElement="GameOverActivity">
-        <dc:Bounds x="1360" y="210" width="100" height="80" />
-        <bpmndi:BPMNLabel />
+      <bpmndi:BPMNShape id="Event_14nv79i_di" bpmnElement="Event_1rhrb33">
+        <dc:Bounds x="1212" y="319" width="36" height="36" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Event_1oz4h0j_di" bpmnElement="WrongSignalRequestForShotEvent">
         <dc:Bounds x="742" y="319" width="36" height="36" />
-      </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Event_14nv79i_di" bpmnElement="Event_1rhrb33">
-        <dc:Bounds x="1212" y="319" width="36" height="36" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNEdge id="SequenceFlow_1fp17al_di" bpmnElement="SequenceFlow_1fp17al">
         <di:waypoint x="188" y="377" />
@@ -327,6 +327,9 @@ execution.setVariable("passiveUserId", temp)</bpmn:script>
         <di:waypoint x="1310" y="352" />
         <di:waypoint x="1310" y="250" />
         <di:waypoint x="1200" y="250" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1215" y="226" width="90" height="14" />
+        </bpmndi:BPMNLabel>
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Flow_0fciri7_di" bpmnElement="Flow_0fciri7">
         <di:waypoint x="1410" y="210" />
@@ -379,6 +382,9 @@ execution.setVariable("passiveUserId", temp)</bpmn:script>
         <di:waypoint x="1230" y="319" />
         <di:waypoint x="1230" y="250" />
         <di:waypoint x="1200" y="250" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1238" y="275" width="43" height="40" />
+        </bpmndi:BPMNLabel>
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Flow_0lttbct_di" bpmnElement="Flow_0lttbct">
         <di:waypoint x="1435" y="377" />

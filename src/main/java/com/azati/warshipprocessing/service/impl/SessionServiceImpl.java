@@ -11,7 +11,6 @@ import com.azati.warshipprocessing.service.SessionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
@@ -40,11 +39,16 @@ public class SessionServiceImpl implements SessionService {
 
     private Session handleNewSessionRequest(CreateSessionRequest request) {
         if (request.secondUserId() != null) {
-            return new Session(UUID.randomUUID(), request.firstUserId(), request.secondUserId(), Instant.now());
+            return Session.builder()
+                    .firstUserId(request.firstUserId())
+                    .secondUserId(request.secondUserId())
+                    .build();
         }
         var sessions = sessionRepository.findOpenSessions();
         if (sessions.isEmpty()) {
-            return new Session(UUID.randomUUID(), request.firstUserId(), Instant.now());
+            return Session.builder()
+                    .firstUserId(request.firstUserId())
+                    .build();
         } else {
             Session session = sessions.get(0);
             session.setSecondUserId(request.firstUserId());
