@@ -17,6 +17,8 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
+import static com.azati.warshipprocessing.util.TestVariableConstants.FIRST_USER_ID;
+import static com.azati.warshipprocessing.util.TestVariableConstants.SECOND_USER_ID;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -39,8 +41,11 @@ class SessionControllerTest {
 
     @BeforeEach
     void setUp() {
-        createSessionRequest = new CreateSessionRequest(null, "firstUserId", null);
-        sessionDTO = new SessionDTO(UUID.randomUUID(), "firstUserId", "secondUserId", Instant.now());
+        createSessionRequest = CreateSessionRequest.builder()
+                .firstUserId(FIRST_USER_ID)
+                .secondUserId(SECOND_USER_ID)
+                .build();
+        sessionDTO = new SessionDTO(UUID.randomUUID(), FIRST_USER_ID, SECOND_USER_ID, Instant.now());
     }
 
     @Test

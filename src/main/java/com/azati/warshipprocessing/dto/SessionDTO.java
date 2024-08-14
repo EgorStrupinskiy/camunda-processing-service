@@ -1,9 +1,10 @@
 package com.azati.warshipprocessing.dto;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.NonNull;
 import lombok.Setter;
 
 import java.time.Instant;
@@ -12,17 +13,18 @@ import java.util.UUID;
 @Getter
 @Setter
 @NoArgsConstructor
+@Schema(description = "Session DTO")
 @AllArgsConstructor
 public class SessionDTO {
 
-    @NonNull
+    @NotNull
     private UUID id;
 
-    @NonNull
+    @NotNull
     private String firstUserId;
 
     private String secondUserId;
 
-    @NonNull
+    @NotNull
     private Instant creationDate;
 }
