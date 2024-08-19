@@ -9,11 +9,13 @@ import com.azati.warshipprocessing.repository.SessionRepository;
 import com.azati.warshipprocessing.service.ProcessService;
 import com.azati.warshipprocessing.service.SessionService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.UUID;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class SessionServiceImpl implements SessionService {
@@ -32,6 +34,7 @@ public class SessionServiceImpl implements SessionService {
         }
         var sessionEntity = sessionRepository.save(session);
         if (sessionEntity.getSecondUserId() != null) {
+            log.info("Session with two players created successfully, starting new game");
             processService.start(sessionEntity.getId());
         }
         return sessionMapper.toDTO(sessionEntity);
@@ -39,6 +42,7 @@ public class SessionServiceImpl implements SessionService {
 
     private Session handleNewSessionRequest(CreateSessionRequest request) {
         if (request.secondUserId() != null) {
+            log.info("Create new session with two players");
             return Session.builder()
                     .firstUserId(request.firstUserId())
                     .secondUserId(request.secondUserId())
@@ -46,11 +50,13 @@ public class SessionServiceImpl implements SessionService {
         }
         var sessions = sessionRepository.findOpenSessions();
         if (sessions.isEmpty()) {
+            log.info("There are no open sessions, create new session with one player");
             return Session.builder()
                     .firstUserId(request.firstUserId())
                     .build();
         } else {
             Session session = sessions.get(0);
+            log.info("Connected player to open session with id {}", session.getId());
             session.setSecondUserId(request.firstUserId());
             return session;
         }
@@ -60,6 +66,7 @@ public class SessionServiceImpl implements SessionService {
         if (request.secondUserId() != null) {
             return handleNewSessionRequest(request);
         }
+        log.info("Connecting to session with id {}", request.sessionId());
         var existedSession = sessionRepository.findById(request.sessionId())
                 .stream()
                 .findFirst()

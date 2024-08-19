@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.camunda.bpm.engine.RuntimeService;
+import org.jasypt.encryption.pbe.StandardPBEStringEncryptor;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.context.annotation.Configuration;
 
@@ -29,13 +30,15 @@ public class QueueListener {
     private final ObjectMapper objectMapper;
     private final SessionService sessionService;
     private final RuntimeService runtimeService;
+    private final StandardPBEStringEncryptor encryptor;
 
     @RabbitListener(queues = "${responseQueue.name}")
     public void listen(String message) {
         ProcessingMessage parsedMessage;
 
         try {
-            parsedMessage = objectMapper.readValue(message, ProcessingMessage.class);
+            var decryptedMessage = encryptor.decrypt(message);
+            parsedMessage = objectMapper.readValue(decryptedMessage, ProcessingMessage.class);
             log.info("Message read from processing queue : {}", parsedMessage);
         } catch (Exception e) {
             log.error("Error while parsing message in queue");

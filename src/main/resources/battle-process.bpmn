@@ -102,7 +102,7 @@ def result = receivedMessageUserId != passiveUserId
     <bpmn:sequenceFlow id="Flow_05rzm89" sourceRef="SendExceptionActivity" targetRef="Gateway_1e9u6e1" />
     <bpmn:sequenceFlow id="Flow_1ovfjn7" sourceRef="ChangeTurnActivity" targetRef="Gateway_0ay4hnj" />
     <bpmn:sequenceFlow id="HitFlow" sourceRef="HitGateway" targetRef="Gateway_0ay4hnj">
-      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">#{status=='hit'}</bpmn:conditionExpression>
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">#{status == 'hit' || status == 'drown'}</bpmn:conditionExpression>
     </bpmn:sequenceFlow>
     <bpmn:sendTask id="GameOverActivity" name="Send GameOver message to players" camunda:class="com.azati.warshipprocessing.action.GameOverAction">
       <bpmn:incoming>Flow_09wem7q</bpmn:incoming>

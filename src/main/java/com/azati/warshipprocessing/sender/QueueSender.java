@@ -3,6 +3,7 @@ package com.azati.warshipprocessing.sender;
 import com.azati.warshipprocessing.model.ProcessingMessage;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
+import org.jasypt.encryption.pbe.StandardPBEStringEncryptor;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -13,6 +14,8 @@ public class QueueSender {
 
     private final RabbitTemplate rabbitTemplate;
     private final ObjectMapper objectMapper;
+    private final StandardPBEStringEncryptor cryptoConverter;
+
 
     @Value("${actionQueue.exchangeName}")
     private String exchangeName;
@@ -22,7 +25,9 @@ public class QueueSender {
 
     public void send(ProcessingMessage request) {
         try {
-            rabbitTemplate.convertAndSend(exchangeName, key, objectMapper.writeValueAsString(request));
+            var jsonMessage = objectMapper.writeValueAsString(request);
+            var encryptedObject = cryptoConverter.encrypt(jsonMessage);
+            rabbitTemplate.convertAndSend(exchangeName, key, encryptedObject);
         } catch (Exception e) {
             e.printStackTrace();
         }
