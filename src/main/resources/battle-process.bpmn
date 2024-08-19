@@ -58,7 +58,7 @@
       <bpmn:outgoing>Flow_0b4ock2</bpmn:outgoing>
     </bpmn:exclusiveGateway>
     <bpmn:sequenceFlow id="Flow_166zxbo" sourceRef="ResendShotActivity" targetRef="Gateway_1ufu3ot" />
-    <bpmn:sequenceFlow id="IncorrectTurnFlow" name="Incorrect user turn" sourceRef="CheckTurnGateway" targetRef="SendExceptionActivity">
+    <bpmn:sequenceFlow id="IncorrectTurnFlow" name="Incorrect user turn" sourceRef="CheckTurnGateway" targetRef="Activity_0yd64js">
       <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression" language="groovy">def receivedMessageUserId = execution.getVariable("receivedMessageUserId")
 def activeUserId = execution.getVariable("activeUserId")
 
@@ -86,7 +86,7 @@ def passiveUserId = execution.getVariable("passiveUserId")
 def result = receivedMessageUserId == passiveUserId
 </bpmn:conditionExpression>
     </bpmn:sequenceFlow>
-    <bpmn:sequenceFlow id="Flow_0vl1vd8" name="Incorrect user turn" sourceRef="Gateway_10b42u0" targetRef="Activity_090edy5">
+    <bpmn:sequenceFlow id="Flow_0vl1vd8" name="Incorrect user turn" sourceRef="Gateway_10b42u0" targetRef="Activity_1a6by3c">
       <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression" language="groovy">def receivedMessageUserId = execution.getVariable("receivedMessageUserId")
 def passiveUserId = execution.getVariable("passiveUserId")
 
@@ -94,12 +94,11 @@ def result = receivedMessageUserId != passiveUserId
 </bpmn:conditionExpression>
     </bpmn:sequenceFlow>
     <bpmn:sequenceFlow id="Flow_0fciri7" sourceRef="GameOverActivity" targetRef="EndEvent_0x6ir2l" />
-    <bpmn:sendTask id="SendExceptionActivity" name="Send exception message to user" camunda:class="com.azati.warshipprocessing.action.SendExceptionAction">
-      <bpmn:incoming>IncorrectTurnFlow</bpmn:incoming>
+    <bpmn:sendTask id="SendWrongRequestTypeExceptionActivity" name="Send WrongRequest exception message to user" camunda:class="com.azati.warshipprocessing.action.SendWrongRequestTypeExceptionAction">
       <bpmn:incoming>Flow_062c5wc</bpmn:incoming>
       <bpmn:outgoing>Flow_05rzm89</bpmn:outgoing>
     </bpmn:sendTask>
-    <bpmn:sequenceFlow id="Flow_05rzm89" sourceRef="SendExceptionActivity" targetRef="Gateway_1e9u6e1" />
+    <bpmn:sequenceFlow id="Flow_05rzm89" sourceRef="SendWrongRequestTypeExceptionActivity" targetRef="Gateway_1e9u6e1" />
     <bpmn:sequenceFlow id="Flow_1ovfjn7" sourceRef="ChangeTurnActivity" targetRef="Gateway_0ay4hnj" />
     <bpmn:sequenceFlow id="HitFlow" sourceRef="HitGateway" targetRef="Gateway_0ay4hnj">
       <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">#{status == 'hit' || status == 'drown'}</bpmn:conditionExpression>
@@ -114,11 +113,11 @@ def result = receivedMessageUserId != passiveUserId
     <bpmn:exclusiveGateway id="Gateway_1e9u6e1">
       <bpmn:incoming>Flow_1c9e8o1</bpmn:incoming>
       <bpmn:incoming>Flow_05rzm89</bpmn:incoming>
+      <bpmn:incoming>Flow_0jfwue8</bpmn:incoming>
       <bpmn:outgoing>Flow_0m9ecx2</bpmn:outgoing>
     </bpmn:exclusiveGateway>
     <bpmn:sequenceFlow id="Flow_0m9ecx2" sourceRef="Gateway_1e9u6e1" targetRef="WaitForShotActivity" />
-    <bpmn:sendTask id="Activity_090edy5" name="Send exception message to user" camunda:class="com.azati.warshipprocessing.action.SendExceptionAction">
-      <bpmn:incoming>Flow_0vl1vd8</bpmn:incoming>
+    <bpmn:sendTask id="Activity_090edy5" name="Send WrongRequest exception message to user" camunda:class="com.azati.warshipprocessing.action.SendWrongRequestTypeExceptionAction">
       <bpmn:incoming>Flow_00n8tvw</bpmn:incoming>
       <bpmn:outgoing>Flow_0mq4t22</bpmn:outgoing>
     </bpmn:sendTask>
@@ -126,6 +125,7 @@ def result = receivedMessageUserId != passiveUserId
     <bpmn:exclusiveGateway id="Gateway_1ufu3ot">
       <bpmn:incoming>Flow_166zxbo</bpmn:incoming>
       <bpmn:incoming>Flow_0mq4t22</bpmn:incoming>
+      <bpmn:incoming>Flow_1kum330</bpmn:incoming>
       <bpmn:outgoing>Flow_0uabe76</bpmn:outgoing>
     </bpmn:exclusiveGateway>
     <bpmn:sequenceFlow id="Flow_0uabe76" sourceRef="Gateway_1ufu3ot" targetRef="WaitForResponseActivity" />
@@ -148,7 +148,7 @@ execution.setVariable("passiveUserId", temp)</bpmn:script>
       <bpmn:outgoing>Flow_05nv9xa</bpmn:outgoing>
     </bpmn:exclusiveGateway>
     <bpmn:sequenceFlow id="Flow_0rn2w92" sourceRef="SendResponseActivity" targetRef="HitGateway" />
-    <bpmn:sequenceFlow id="Flow_062c5wc" name="Incorrect&#10;User&#10;Request" sourceRef="WrongSignalRequestForShotEvent" targetRef="SendExceptionActivity" />
+    <bpmn:sequenceFlow id="Flow_062c5wc" name="Incorrect&#10;User&#10;Request" sourceRef="WrongSignalRequestForShotEvent" targetRef="SendWrongRequestTypeExceptionActivity" />
     <bpmn:sequenceFlow id="Flow_00n8tvw" name="Incorrect&#10;User&#10;Request" sourceRef="Event_1rhrb33" targetRef="Activity_090edy5" />
     <bpmn:exclusiveGateway id="Gateway_0e43r0j" name="Is it gameOver?">
       <bpmn:incoming>Flow_0otykde</bpmn:incoming>
@@ -166,6 +166,16 @@ execution.setVariable("passiveUserId", temp)</bpmn:script>
       <bpmn:outgoing>Flow_00n8tvw</bpmn:outgoing>
       <bpmn:messageEventDefinition id="MessageEventDefinition_0oz2x4m" messageRef="wrong-request-type" />
     </bpmn:boundaryEvent>
+    <bpmn:sendTask id="Activity_0yd64js" name="Send &#10;wrong turn exception message to user" camunda:class="com.azati.warshipprocessing.action.SendWrongTurnExceptionAction">
+      <bpmn:incoming>IncorrectTurnFlow</bpmn:incoming>
+      <bpmn:outgoing>Flow_0jfwue8</bpmn:outgoing>
+    </bpmn:sendTask>
+    <bpmn:sequenceFlow id="Flow_0jfwue8" sourceRef="Activity_0yd64js" targetRef="Gateway_1e9u6e1" />
+    <bpmn:sendTask id="Activity_1a6by3c" name="Send &#10;wrong turn exception message to user" camunda:class="com.azati.warshipprocessing.action.SendWrongTurnExceptionAction">
+      <bpmn:incoming>Flow_0vl1vd8</bpmn:incoming>
+      <bpmn:outgoing>Flow_1kum330</bpmn:outgoing>
+    </bpmn:sendTask>
+    <bpmn:sequenceFlow id="Flow_1kum330" sourceRef="Activity_1a6by3c" targetRef="Gateway_1ufu3ot" />
   </bpmn:process>
   <bpmn:message id="response-message" name="shot-response" />
   <bpmn:message id="request-message" name="shot-request" />
@@ -230,8 +240,9 @@ execution.setVariable("passiveUserId", temp)</bpmn:script>
           <dc:Bounds x="1273" y="409" width="78" height="27" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Activity_0c3ui3z_di" bpmnElement="SendExceptionActivity">
+      <bpmndi:BPMNShape id="Activity_0c3ui3z_di" bpmnElement="SendWrongRequestTypeExceptionActivity">
         <dc:Bounds x="630" y="210" width="100" height="80" />
+        <bpmndi:BPMNLabel />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="BPMNShape_0bmu7ec" bpmnElement="GameOverActivity">
         <dc:Bounds x="1360" y="210" width="100" height="80" />
@@ -242,6 +253,7 @@ execution.setVariable("passiveUserId", temp)</bpmn:script>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="BPMNShape_0rwzru8" bpmnElement="Activity_090edy5">
         <dc:Bounds x="1100" y="210" width="100" height="80" />
+        <bpmndi:BPMNLabel />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Gateway_1ufu3ot_di" bpmnElement="Gateway_1ufu3ot" isMarkerVisible="true">
         <dc:Bounds x="1045" y="352" width="50" height="50" />
@@ -258,6 +270,14 @@ execution.setVariable("passiveUserId", temp)</bpmn:script>
         <bpmndi:BPMNLabel>
           <dc:Bounds x="1373" y="409" width="78" height="14" />
         </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="BPMNShape_1xwc1uj" bpmnElement="Activity_0yd64js">
+        <dc:Bounds x="630" y="100" width="100" height="80" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="BPMNShape_1634tg2" bpmnElement="Activity_1a6by3c">
+        <dc:Bounds x="1100" y="100" width="100" height="80" />
+        <bpmndi:BPMNLabel />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Event_14nv79i_di" bpmnElement="Event_1rhrb33">
         <dc:Bounds x="1212" y="319" width="36" height="36" />
@@ -301,10 +321,10 @@ execution.setVariable("passiveUserId", temp)</bpmn:script>
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Flow_13jakkf_di" bpmnElement="IncorrectTurnFlow">
         <di:waypoint x="850" y="352" />
-        <di:waypoint x="850" y="250" />
-        <di:waypoint x="730" y="250" />
+        <di:waypoint x="850" y="140" />
+        <di:waypoint x="730" y="140" />
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="745" y="226" width="90" height="14" />
+          <dc:Bounds x="745" y="116" width="90" height="14" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Flow_0b4ock2_di" bpmnElement="Flow_0b4ock2">
@@ -325,10 +345,10 @@ execution.setVariable("passiveUserId", temp)</bpmn:script>
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Flow_0vl1vd8_di" bpmnElement="Flow_0vl1vd8">
         <di:waypoint x="1310" y="352" />
-        <di:waypoint x="1310" y="250" />
-        <di:waypoint x="1200" y="250" />
+        <di:waypoint x="1310" y="140" />
+        <di:waypoint x="1200" y="140" />
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="1215" y="226" width="90" height="14" />
+          <dc:Bounds x="1215" y="116" width="90" height="14" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Flow_0fciri7_di" bpmnElement="Flow_0fciri7">
@@ -389,6 +409,16 @@ execution.setVariable("passiveUserId", temp)</bpmn:script>
       <bpmndi:BPMNEdge id="Flow_0lttbct_di" bpmnElement="Flow_0lttbct">
         <di:waypoint x="1435" y="377" />
         <di:waypoint x="1480" y="377" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_0jfwue8_di" bpmnElement="Flow_0jfwue8">
+        <di:waypoint x="630" y="140" />
+        <di:waypoint x="610" y="140" />
+        <di:waypoint x="610" y="352" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_1kum330_di" bpmnElement="Flow_1kum330">
+        <di:waypoint x="1100" y="140" />
+        <di:waypoint x="1070" y="140" />
+        <di:waypoint x="1070" y="352" />
       </bpmndi:BPMNEdge>
     </bpmndi:BPMNPlane>
   </bpmndi:BPMNDiagram>

@@ -3,6 +3,8 @@ package com.azati.warshipprocessing.service.impl;
 import com.azati.warshipprocessing.dto.SessionDTO;
 import com.azati.warshipprocessing.entity.Session;
 import com.azati.warshipprocessing.exception.NoSuchSessionException;
+import com.azati.warshipprocessing.exception.SameUsersInSessionException;
+import com.azati.warshipprocessing.exception.UserAlreadyInSessionException;
 import com.azati.warshipprocessing.mapper.SessionMapper;
 import com.azati.warshipprocessing.model.CreateSessionRequest;
 import com.azati.warshipprocessing.repository.SessionRepository;
@@ -27,12 +29,16 @@ public class SessionServiceImpl implements SessionService {
     @Override
     public SessionDTO create(CreateSessionRequest request) {
         Session session;
+        //look, if request has a sessionId
         if (request.sessionId() == null) {
             session = handleNewSessionRequest(request);
         } else {
             session = handleExistingSessionRequest(request);
         }
         var sessionEntity = sessionRepository.save(session);
+        log.info("SessionId: {}", sessionEntity.getId());
+
+        //Check if we can start the game
         if (sessionEntity.getSecondUserId() != null) {
             log.info("Session with two players created successfully, starting new game");
             processService.start(sessionEntity.getId());
@@ -41,8 +47,13 @@ public class SessionServiceImpl implements SessionService {
     }
 
     private Session handleNewSessionRequest(CreateSessionRequest request) {
+        //Check if the request has secondUserId, so we need to create session instantly
         if (request.secondUserId() != null) {
             log.info("Create new session with two players");
+            if (request.firstUserId().equals(request.secondUserId())) {
+                log.error("There can`t be a session with two users with same id`s");
+                throw new SameUsersInSessionException("There can`t be two players with the same id in one session");
+            }
             return Session.builder()
                     .firstUserId(request.firstUserId())
                     .secondUserId(request.secondUserId())
@@ -55,9 +66,16 @@ public class SessionServiceImpl implements SessionService {
                     .firstUserId(request.firstUserId())
                     .build();
         } else {
-            Session session = sessions.get(0);
-            log.info("Connected player to open session with id {}", session.getId());
+            //Try to find open session without this user
+            var session = sessions.stream()
+                    .filter(s -> !s.getFirstUserId().equals(request.firstUserId()))
+                    .findFirst()
+                    .orElseThrow(() -> {
+                        log.error("There is already an open session for user with id {}", request.firstUserId());
+                        return new UserAlreadyInSessionException(String.format("User with id %s is already in session", request.firstUserId()));
+                    });
             session.setSecondUserId(request.firstUserId());
+            log.info("Connected player to open session with id {}", session.getId());
             return session;
         }
     }
