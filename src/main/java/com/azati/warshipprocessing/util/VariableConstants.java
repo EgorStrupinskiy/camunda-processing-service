@@ -1,5 +1,8 @@
 package com.azati.warshipprocessing.util;
 
+import lombok.experimental.UtilityClass;
+
+@UtilityClass
 public class VariableConstants {
     public static final String PROCESS_ID = "warship-battle-process";
     public static final String ACTIVE_USER_ID = "activeUserId";
