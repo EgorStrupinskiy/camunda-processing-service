@@ -1,6 +1,7 @@
 package com.azati.warshipprocessing.integration;
 
 import com.azati.warshipprocessing.dto.SessionDTO;
+import com.azati.warshipprocessing.messaging.ActionQueueListener;
 import com.azati.warshipprocessing.messaging.ResponseQueueSender;
 import com.azati.warshipprocessing.model.CreateSessionRequest;
 import com.azati.warshipprocessing.model.ProcessingMessage;
@@ -15,11 +16,11 @@ import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.http.ResponseEntity;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
-import static com.azati.warshipprocessing.util.TestVariableConstants.ACTION_QUEUE_NAME;
 import static com.azati.warshipprocessing.util.TestVariableConstants.FIRST_USER_ID;
 import static com.azati.warshipprocessing.util.TestVariableConstants.HIT;
 import static com.azati.warshipprocessing.util.TestVariableConstants.MISS;
 import static com.azati.warshipprocessing.util.TestVariableConstants.SECOND_USER_ID;
+import static com.azati.warshipprocessing.util.VariableConstants.EXCEPTION;
 import static com.azati.warshipprocessing.util.VariableConstants.GAME_OVER;
 import static com.azati.warshipprocessing.util.VariableConstants.INCORRECT_TURN;
 import static com.azati.warshipprocessing.util.VariableConstants.LOOSE;
@@ -27,9 +28,9 @@ import static com.azati.warshipprocessing.util.VariableConstants.RESPONSE;
 import static com.azati.warshipprocessing.util.VariableConstants.SHOOT;
 import static com.azati.warshipprocessing.util.VariableConstants.SHOT_INFO;
 import static com.azati.warshipprocessing.util.VariableConstants.WIN;
+import static com.azati.warshipprocessing.util.VariableConstants.WRONG_REQUEST_TYPE;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.awaitility.Awaitility.await;
-import static org.camunda.bpm.admin.impl.plugin.resources.MetricsRestService.objectMapper;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
@@ -45,6 +46,9 @@ class RabbitMqIntegrationTest {
 
     @Autowired
     private TestRestTemplate restTemplate;
+
+    @Autowired
+    private ActionQueueListener listener;
 
     @LocalServerPort
     private int port;
@@ -78,22 +82,22 @@ class RabbitMqIntegrationTest {
 
         //wait for first shot request
         await().atMost(10, SECONDS).untilAsserted(() -> {
-            String receivedMessage = (String) rabbitTemplate.receiveAndConvert(ACTION_QUEUE_NAME);
-            assertNotNull(receivedMessage);
-            ProcessingMessage parsedMessage = objectMapper.readValue(receivedMessage, ProcessingMessage.class);
+            ProcessingMessage parsedMessage = listener.getProcessingMessage();
             assertEquals(sessionId, parsedMessage.getSessionId());
             assertEquals(FIRST_USER_ID, parsedMessage.getUserId());
             assertEquals(SHOOT, parsedMessage.getAction());
         });
         //send first shot request
-        ProcessingMessage firstMessage = new ProcessingMessage(sessionId, FIRST_USER_ID, SHOOT);
+        ProcessingMessage firstMessage = ProcessingMessage.builder()
+                .sessionId(sessionId)
+                .userId(FIRST_USER_ID)
+                .action(SHOOT)
+                .build();
         responseQueueSender.send(firstMessage);
 
         //wait for request to response to a shot for another player
         await().atMost(10, SECONDS).untilAsserted(() -> {
-            String receivedMessage = (String) rabbitTemplate.receiveAndConvert(ACTION_QUEUE_NAME);
-            assertNotNull(receivedMessage);
-            ProcessingMessage parsedMessage = objectMapper.readValue(receivedMessage, ProcessingMessage.class);
+            ProcessingMessage parsedMessage = listener.getProcessingMessage();
             assertEquals(sessionId, parsedMessage.getSessionId());
             assertEquals(SECOND_USER_ID, parsedMessage.getUserId());
             assertEquals(RESPONSE, parsedMessage.getAction());
@@ -105,9 +109,7 @@ class RabbitMqIntegrationTest {
 
         //wait for a shot status for firstUser, it must be a miss
         await().atMost(10, SECONDS).untilAsserted(() -> {
-            String receivedMessage = (String) rabbitTemplate.receiveAndConvert(ACTION_QUEUE_NAME);
-            assertNotNull(receivedMessage);
-            ProcessingMessage parsedMessage = objectMapper.readValue(receivedMessage, ProcessingMessage.class);
+            ProcessingMessage parsedMessage = listener.getProcessingMessage();
             assertEquals(sessionId, parsedMessage.getSessionId());
             assertEquals(FIRST_USER_ID, parsedMessage.getUserId());
             assertEquals(SHOT_INFO, parsedMessage.getAction());
@@ -116,9 +118,7 @@ class RabbitMqIntegrationTest {
 
         //wait for second player shot request
         await().atMost(10, SECONDS).untilAsserted(() -> {
-            String receivedMessage = (String) rabbitTemplate.receiveAndConvert(ACTION_QUEUE_NAME);
-            assertNotNull(receivedMessage);
-            ProcessingMessage parsedMessage = objectMapper.readValue(receivedMessage, ProcessingMessage.class);
+            ProcessingMessage parsedMessage = listener.getProcessingMessage();
             assertEquals(sessionId, parsedMessage.getSessionId());
             assertEquals(SECOND_USER_ID, parsedMessage.getUserId());
             assertEquals(SHOOT, parsedMessage.getAction());
@@ -138,22 +138,22 @@ class RabbitMqIntegrationTest {
 
         //wait for first shot request
         await().atMost(10, SECONDS).untilAsserted(() -> {
-            String receivedMessage = (String) rabbitTemplate.receiveAndConvert(ACTION_QUEUE_NAME);
-            assertNotNull(receivedMessage);
-            ProcessingMessage parsedMessage = objectMapper.readValue(receivedMessage, ProcessingMessage.class);
+            ProcessingMessage parsedMessage = listener.getProcessingMessage();
             assertEquals(sessionId, parsedMessage.getSessionId());
             assertEquals(FIRST_USER_ID, parsedMessage.getUserId());
             assertEquals(SHOOT, parsedMessage.getAction());
         });
         //send first shot request
-        ProcessingMessage firstMessage = new ProcessingMessage(sessionId, FIRST_USER_ID, SHOOT);
+        ProcessingMessage firstMessage = ProcessingMessage.builder()
+                .sessionId(sessionId)
+                .userId(FIRST_USER_ID)
+                .action(SHOOT)
+                .build();
         responseQueueSender.send(firstMessage);
 
         //wait for request to response to a shot for another player
         await().atMost(10, SECONDS).untilAsserted(() -> {
-            String receivedMessage = (String) rabbitTemplate.receiveAndConvert(ACTION_QUEUE_NAME);
-            assertNotNull(receivedMessage);
-            ProcessingMessage parsedMessage = objectMapper.readValue(receivedMessage, ProcessingMessage.class);
+            ProcessingMessage parsedMessage = listener.getProcessingMessage();
             assertEquals(sessionId, parsedMessage.getSessionId());
             assertEquals(SECOND_USER_ID, parsedMessage.getUserId());
             assertEquals(RESPONSE, parsedMessage.getAction());
@@ -165,9 +165,7 @@ class RabbitMqIntegrationTest {
 
         //wait for a shot status for firstUser, it must be a hit
         await().atMost(10, SECONDS).untilAsserted(() -> {
-            String receivedMessage = (String) rabbitTemplate.receiveAndConvert(ACTION_QUEUE_NAME);
-            assertNotNull(receivedMessage);
-            ProcessingMessage parsedMessage = objectMapper.readValue(receivedMessage, ProcessingMessage.class);
+            ProcessingMessage parsedMessage = listener.getProcessingMessage();
             assertEquals(sessionId, parsedMessage.getSessionId());
             assertEquals(FIRST_USER_ID, parsedMessage.getUserId());
             assertEquals(SHOT_INFO, parsedMessage.getAction());
@@ -176,9 +174,7 @@ class RabbitMqIntegrationTest {
 
         //wait for one more shot request for first player
         await().atMost(10, SECONDS).untilAsserted(() -> {
-            String receivedMessage = (String) rabbitTemplate.receiveAndConvert(ACTION_QUEUE_NAME);
-            assertNotNull(receivedMessage);
-            ProcessingMessage parsedMessage = objectMapper.readValue(receivedMessage, ProcessingMessage.class);
+            ProcessingMessage parsedMessage = listener.getProcessingMessage();
             assertEquals(sessionId, parsedMessage.getSessionId());
             assertEquals(FIRST_USER_ID, parsedMessage.getUserId());
             assertEquals(SHOOT, parsedMessage.getAction());
@@ -198,25 +194,26 @@ class RabbitMqIntegrationTest {
 
         //wait for first shot request
         await().atMost(10, SECONDS).untilAsserted(() -> {
-            String receivedMessage = (String) rabbitTemplate.receiveAndConvert(ACTION_QUEUE_NAME);
-            assertNotNull(receivedMessage);
-            ProcessingMessage parsedMessage = objectMapper.readValue(receivedMessage, ProcessingMessage.class);
+            ProcessingMessage parsedMessage = listener.getProcessingMessage();
             assertEquals(sessionId, parsedMessage.getSessionId());
             assertEquals(FIRST_USER_ID, parsedMessage.getUserId());
             assertEquals(SHOOT, parsedMessage.getAction());
         });
         //send first shot request
-        ProcessingMessage firstMessage = new ProcessingMessage(sessionId, SECOND_USER_ID, SHOOT);
+        ProcessingMessage firstMessage = ProcessingMessage.builder()
+                .sessionId(sessionId)
+                .userId(SECOND_USER_ID)
+                .action(SHOOT)
+                .build();
         responseQueueSender.send(firstMessage);
 
         //wait for wrong user request message
         await().atMost(10, SECONDS).untilAsserted(() -> {
-            String receivedMessage = (String) rabbitTemplate.receiveAndConvert(ACTION_QUEUE_NAME);
-            assertNotNull(receivedMessage);
-            ProcessingMessage parsedMessage = objectMapper.readValue(receivedMessage, ProcessingMessage.class);
+            ProcessingMessage parsedMessage = listener.getProcessingMessage();
             assertEquals(sessionId, parsedMessage.getSessionId());
             assertEquals(SECOND_USER_ID, parsedMessage.getUserId());
-            assertEquals(INCORRECT_TURN, parsedMessage.getAction());
+            assertEquals(EXCEPTION, parsedMessage.getAction());
+            assertEquals(INCORRECT_TURN, parsedMessage.getStatus());
         });
     }
 
@@ -233,25 +230,26 @@ class RabbitMqIntegrationTest {
 
         //wait for first shot request
         await().atMost(10, SECONDS).untilAsserted(() -> {
-            String receivedMessage = (String) rabbitTemplate.receiveAndConvert(ACTION_QUEUE_NAME);
-            assertNotNull(receivedMessage);
-            ProcessingMessage parsedMessage = objectMapper.readValue(receivedMessage, ProcessingMessage.class);
+            ProcessingMessage parsedMessage = listener.getProcessingMessage();
             assertEquals(sessionId, parsedMessage.getSessionId());
             assertEquals(FIRST_USER_ID, parsedMessage.getUserId());
             assertEquals(SHOOT, parsedMessage.getAction());
         });
         //send first shot request
-        ProcessingMessage firstMessage = new ProcessingMessage(sessionId, SECOND_USER_ID, RESPONSE);
+        ProcessingMessage firstMessage = ProcessingMessage.builder()
+                .sessionId(sessionId)
+                .userId(SECOND_USER_ID)
+                .action(RESPONSE)
+                .build();
         responseQueueSender.send(firstMessage);
 
         //wait for wrong user request message
         await().atMost(10, SECONDS).untilAsserted(() -> {
-            String receivedMessage = (String) rabbitTemplate.receiveAndConvert(ACTION_QUEUE_NAME);
-            assertNotNull(receivedMessage);
-            ProcessingMessage parsedMessage = objectMapper.readValue(receivedMessage, ProcessingMessage.class);
+            ProcessingMessage parsedMessage = listener.getProcessingMessage();
             assertEquals(sessionId, parsedMessage.getSessionId());
             assertEquals(SECOND_USER_ID, parsedMessage.getUserId());
-            assertEquals(INCORRECT_TURN, parsedMessage.getAction());
+            assertEquals(EXCEPTION, parsedMessage.getAction());
+            assertEquals(WRONG_REQUEST_TYPE, parsedMessage.getStatus());
         });
     }
 
@@ -268,22 +266,22 @@ class RabbitMqIntegrationTest {
 
         //wait for first shot request
         await().atMost(10, SECONDS).untilAsserted(() -> {
-            String receivedMessage = (String) rabbitTemplate.receiveAndConvert(ACTION_QUEUE_NAME);
-            assertNotNull(receivedMessage);
-            ProcessingMessage parsedMessage = objectMapper.readValue(receivedMessage, ProcessingMessage.class);
+            ProcessingMessage parsedMessage = listener.getProcessingMessage();
             assertEquals(sessionId, parsedMessage.getSessionId());
             assertEquals(FIRST_USER_ID, parsedMessage.getUserId());
             assertEquals(SHOOT, parsedMessage.getAction());
         });
         //send first shot request
-        ProcessingMessage firstMessage = new ProcessingMessage(sessionId, FIRST_USER_ID, SHOOT);
+        ProcessingMessage firstMessage = ProcessingMessage.builder()
+                .sessionId(sessionId)
+                .userId(FIRST_USER_ID)
+                .action(SHOOT)
+                .build();
         responseQueueSender.send(firstMessage);
 
         //wait for request to response to a shot for another player
         await().atMost(10, SECONDS).untilAsserted(() -> {
-            String receivedMessage = (String) rabbitTemplate.receiveAndConvert(ACTION_QUEUE_NAME);
-            assertNotNull(receivedMessage);
-            ProcessingMessage parsedMessage = objectMapper.readValue(receivedMessage, ProcessingMessage.class);
+            ProcessingMessage parsedMessage = listener.getProcessingMessage();
             assertEquals(sessionId, parsedMessage.getSessionId());
             assertEquals(SECOND_USER_ID, parsedMessage.getUserId());
             assertEquals(RESPONSE, parsedMessage.getAction());
@@ -295,12 +293,11 @@ class RabbitMqIntegrationTest {
 
         //wait for wrong request type message
         await().atMost(10, SECONDS).untilAsserted(() -> {
-            String receivedMessage = (String) rabbitTemplate.receiveAndConvert(ACTION_QUEUE_NAME);
-            assertNotNull(receivedMessage);
-            ProcessingMessage parsedMessage = objectMapper.readValue(receivedMessage, ProcessingMessage.class);
+            ProcessingMessage parsedMessage = listener.getProcessingMessage();
             assertEquals(sessionId, parsedMessage.getSessionId());
             assertEquals(FIRST_USER_ID, parsedMessage.getUserId());
-            assertEquals(INCORRECT_TURN, parsedMessage.getAction());
+            assertEquals(EXCEPTION, parsedMessage.getAction());
+            assertEquals(INCORRECT_TURN, parsedMessage.getStatus());
         });
     }
 
@@ -317,22 +314,22 @@ class RabbitMqIntegrationTest {
 
         //wait for first shot request
         await().atMost(10, SECONDS).untilAsserted(() -> {
-            String receivedMessage = (String) rabbitTemplate.receiveAndConvert(ACTION_QUEUE_NAME);
-            assertNotNull(receivedMessage);
-            ProcessingMessage parsedMessage = objectMapper.readValue(receivedMessage, ProcessingMessage.class);
+            ProcessingMessage parsedMessage = listener.getProcessingMessage();
             assertEquals(sessionId, parsedMessage.getSessionId());
             assertEquals(FIRST_USER_ID, parsedMessage.getUserId());
             assertEquals(SHOOT, parsedMessage.getAction());
         });
         //send first shot request
-        ProcessingMessage firstMessage = new ProcessingMessage(sessionId, FIRST_USER_ID, SHOOT);
+        ProcessingMessage firstMessage = ProcessingMessage.builder()
+                .sessionId(sessionId)
+                .userId(FIRST_USER_ID)
+                .action(SHOOT)
+                .build();
         responseQueueSender.send(firstMessage);
 
         //wait for request to response to a shot for another player
         await().atMost(10, SECONDS).untilAsserted(() -> {
-            String receivedMessage = (String) rabbitTemplate.receiveAndConvert(ACTION_QUEUE_NAME);
-            assertNotNull(receivedMessage);
-            ProcessingMessage parsedMessage = objectMapper.readValue(receivedMessage, ProcessingMessage.class);
+            ProcessingMessage parsedMessage = listener.getProcessingMessage();
             assertEquals(sessionId, parsedMessage.getSessionId());
             assertEquals(SECOND_USER_ID, parsedMessage.getUserId());
             assertEquals(RESPONSE, parsedMessage.getAction());
@@ -344,9 +341,7 @@ class RabbitMqIntegrationTest {
 
         //wait for a game status for firstUser, it must be a win
         await().atMost(10, SECONDS).untilAsserted(() -> {
-            String receivedMessage = (String) rabbitTemplate.receiveAndConvert(ACTION_QUEUE_NAME);
-            assertNotNull(receivedMessage);
-            ProcessingMessage parsedMessage = objectMapper.readValue(receivedMessage, ProcessingMessage.class);
+            ProcessingMessage parsedMessage = listener.getProcessingMessage();
             assertEquals(sessionId, parsedMessage.getSessionId());
             assertEquals(SECOND_USER_ID, parsedMessage.getUserId());
             assertEquals(LOOSE, parsedMessage.getAction());
@@ -354,9 +349,7 @@ class RabbitMqIntegrationTest {
 
         //wait for a game status for second User, it must be a loose
         await().atMost(10, SECONDS).untilAsserted(() -> {
-            String receivedMessage = (String) rabbitTemplate.receiveAndConvert(ACTION_QUEUE_NAME);
-            assertNotNull(receivedMessage);
-            ProcessingMessage parsedMessage = objectMapper.readValue(receivedMessage, ProcessingMessage.class);
+            ProcessingMessage parsedMessage = listener.getProcessingMessage();
             assertEquals(sessionId, parsedMessage.getSessionId());
             assertEquals(FIRST_USER_ID, parsedMessage.getUserId());
             assertEquals(WIN, parsedMessage.getAction());

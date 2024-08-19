@@ -78,6 +78,18 @@ public class SessionController {
                                     value = "{\"status\":\"NOT_FOUND\", " +
                                             "\"message\":\"Session with id c4335079-2395-4604-b710-94d5db653b56 not found\"}"
                             ),
+                    }, mediaType = MediaType.APPLICATION_JSON_VALUE)),
+                    @ApiResponse(responseCode = "400", content = @Content(examples = {
+                            @ExampleObject(name = "Session for this player already exists",
+                                    description = "User will get exception when trying to connect to session, when he is already in open session.",
+                                    value = "{\"status\":\"BAD_REQUEST\", " +
+                                            "\"message\":\"There already is an open session for user with id randomUserId\"}"
+                            ),
+                            @ExampleObject(name = "Same users in CreateSessionRequest",
+                                    description = "User will get exception when trying to create session with the same userId`s.",
+                                    value = "{\"status\":\"BAD_REQUEST\", " +
+                                            "\"message\":\"There can`t be two players with the same id in one session\"}"
+                            )
                     }, mediaType = MediaType.APPLICATION_JSON_VALUE))
             })
     public ResponseEntity<SessionDTO> createSession(@RequestBody CreateSessionRequest request) {

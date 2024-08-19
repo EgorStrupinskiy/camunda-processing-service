@@ -2,6 +2,7 @@ package com.azati.warshipprocessing.listener;
 
 import com.azati.warshipprocessing.exception.NoSuchSessionException;
 import com.azati.warshipprocessing.model.ProcessingMessage;
+import com.azati.warshipprocessing.sender.QueueSender;
 import com.azati.warshipprocessing.service.SessionService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
@@ -13,6 +14,8 @@ import org.springframework.context.annotation.Configuration;
 
 import java.util.HashMap;
 
+import static com.azati.warshipprocessing.util.VariableConstants.EXCEPTION;
+import static com.azati.warshipprocessing.util.VariableConstants.NO_SUCH_SESSION;
 import static com.azati.warshipprocessing.util.VariableConstants.PROCESSING_MESSAGE;
 import static com.azati.warshipprocessing.util.VariableConstants.RECEIVED_MESSAGE_USER_ID;
 import static com.azati.warshipprocessing.util.VariableConstants.RESPONSE;
@@ -31,6 +34,7 @@ public class QueueListener {
     private final SessionService sessionService;
     private final RuntimeService runtimeService;
     private final StandardPBEStringEncryptor encryptor;
+    private final QueueSender queueSender;
 
     @RabbitListener(queues = "${responseQueue.name}")
     public void listen(String message) {
@@ -53,10 +57,12 @@ public class QueueListener {
             sessionService.getById(parsedMessage.getSessionId());
         } catch (NoSuchSessionException e) {
             log.error("There is no session with this id: {}", parsedMessage.getSessionId());
-            runtimeService.createMessageCorrelation(WRONG_REQUEST_TYPE)
-                    .processInstanceBusinessKey(String.valueOf(parsedMessage.getSessionId()))
-                    .setVariables(variables)
-                    .correlate();
+            queueSender.send(ProcessingMessage.builder()
+                    .sessionId(parsedMessage.getSessionId())
+                    .userId(parsedMessage.getUserId())
+                    .action(EXCEPTION)
+                    .status(NO_SUCH_SESSION)
+                    .build());
             return;
         }
         try {

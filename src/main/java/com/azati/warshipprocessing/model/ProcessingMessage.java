@@ -1,36 +1,34 @@
 package com.azati.warshipprocessing.model;
 
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.NonNull;
-import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 
 import java.util.UUID;
 
-@Builder
 @Getter
 @Setter
+@Builder
 @ToString
 @NoArgsConstructor
 @AllArgsConstructor
-@RequiredArgsConstructor
 public final class ProcessingMessage {
 
-    @NonNull
+    @NotNull
     private UUID sessionId;
 
-    @NonNull
+    @NotNull
     private String userId;
 
     private int x;
 
     private int y;
 
-    @NonNull
+    @NotNull
     private String action;
 
     private String status;
