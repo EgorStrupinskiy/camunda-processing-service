@@ -28,7 +28,7 @@ public class ResendShotAction implements JavaDelegate {
         message.setAction(RESPONSE);
         message.setUserId(passiveUserId);
 
-        queueSender.send((ProcessingMessage) delegateExecution.getVariable(PROCESSING_MESSAGE));
+        queueSender.send(message);
         log.info("Shot was send to user with id {}, waiting for response", passiveUserId);
     }
 }
