@@ -28,7 +28,6 @@ public class SendResponseToShooterAction implements JavaDelegate {
         var activeUserId = (String) delegateExecution.getVariable(ACTIVE_USER_ID);
 
         message.setAction(SHOT_INFO);
-        message.setStatus(message.getStatus());
         message.setUserId(activeUserId);
 
         queueSender.send(message);

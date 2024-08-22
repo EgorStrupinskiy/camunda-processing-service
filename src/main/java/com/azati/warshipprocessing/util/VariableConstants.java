@@ -18,7 +18,7 @@ public class VariableConstants {
     public static final String EXCEPTION = "exception";
     public static final String INCORRECT_TURN = "incorrectTurn";
     public static final String WRONG_REQUEST_TYPE = "wrong-request-type";
-    public static final String NO_SUCH_SESSION = "wrong-request-type";
+    public static final String NO_SUCH_SESSION = "no-such-session";
     public static final String SHOT_RESPONSE = "shot-response";
     public static final String SHOT_REQUEST = "shot-request";
     public static final String GAME_OVER = "gameOver";
