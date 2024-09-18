@@ -24,9 +24,9 @@ public final class ProcessingMessage {
     @NotNull
     private String userId;
 
-    private int x;
+    private Integer x;
 
-    private int y;
+    private Integer y;
 
     @NotNull
     private String action;

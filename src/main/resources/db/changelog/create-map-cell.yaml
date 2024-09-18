@@ -1,0 +1,38 @@
+databaseChangeLog:
+  - changeSet:
+      author: strupinski
+      id: 2
+      changes:
+        - createTable:
+            tableName: map_cell
+            columns:
+              - column:
+                  name: id
+                  type: int
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: x
+                  type: int
+                  constraints:
+                    nullable: false
+              - column:
+                  name: y
+                  type: int
+                  constraints:
+                    nullable: false
+              - column:
+                  name: status
+                  type: varchar(64)
+              - column:
+                  name: user_id
+                  type: varchar(64)
+              - column:
+                  name: session_id
+                  type: uuid
+        - createSequence:
+            sequenceName: map_cell_seq
+            startValue: 1
+            incrementBy: 1

@@ -22,5 +22,14 @@ public class VariableConstants {
     public static final String SHOT_RESPONSE = "shot-response";
     public static final String SHOT_REQUEST = "shot-request";
     public static final String GAME_OVER = "gameOver";
+    public static final String OK_VIEW = "0";
+    public static final String HIT_VIEW = "H";
+    public static final String DROWN_VIEW = "*";
+    public static final String MISS_VIEW = "X";
+    public static final String HIT = "hit";
+    public static final String MISS = "miss";
+    public static final String DROWN = "drown";
+    public static final String OK = "ok";
+    public static final Integer GAME_MAP_CELLS_COUNT = 10;
 
 }

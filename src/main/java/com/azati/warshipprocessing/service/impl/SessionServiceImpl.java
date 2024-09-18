@@ -1,12 +1,14 @@
 package com.azati.warshipprocessing.service.impl;
 
 import com.azati.warshipprocessing.dto.SessionDTO;
+import com.azati.warshipprocessing.entity.MapCell;
 import com.azati.warshipprocessing.entity.Session;
 import com.azati.warshipprocessing.exception.NoSuchSessionException;
 import com.azati.warshipprocessing.exception.SameUsersInSessionException;
 import com.azati.warshipprocessing.exception.UserAlreadyInSessionException;
 import com.azati.warshipprocessing.mapper.SessionMapper;
 import com.azati.warshipprocessing.model.CreateSessionRequest;
+import com.azati.warshipprocessing.repository.MapCellRepository;
 import com.azati.warshipprocessing.repository.SessionRepository;
 import com.azati.warshipprocessing.service.ProcessService;
 import com.azati.warshipprocessing.service.SessionService;
@@ -14,8 +16,12 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+
+import static com.azati.warshipprocessing.util.VariableConstants.GAME_MAP_CELLS_COUNT;
+import static com.azati.warshipprocessing.util.VariableConstants.OK;
 
 @Slf4j
 @Service
@@ -25,6 +31,7 @@ public class SessionServiceImpl implements SessionService {
     private final SessionRepository sessionRepository;
     private final SessionMapper sessionMapper;
     private final ProcessService processService;
+    private final MapCellRepository mapCellRepository;
 
     @Override
     public SessionDTO create(CreateSessionRequest request) {
@@ -42,6 +49,7 @@ public class SessionServiceImpl implements SessionService {
         if (sessionEntity.getSecondUserId() != null) {
             log.info("Session with two players created successfully, starting new game");
             processService.start(sessionEntity.getId());
+            createGameMaps(sessionEntity);
         }
         return sessionMapper.toDTO(sessionEntity);
     }
@@ -107,5 +115,23 @@ public class SessionServiceImpl implements SessionService {
     public SessionDTO getById(UUID sessionId) {
         return sessionMapper.toDTO(sessionRepository.findById(sessionId)
                 .orElseThrow(() -> new NoSuchSessionException(String.format("Session with id %s not found", sessionId))));
+    }
+
+    private void createGameMaps(Session session) {
+        var map = new ArrayList<MapCell>();
+        for (int k = 0; k < 2; k++) {
+            for (int i = 0; i < GAME_MAP_CELLS_COUNT; i++) {
+                for (int j = 0; j < GAME_MAP_CELLS_COUNT; j++) {
+                    map.add(MapCell.builder()
+                            .x(j)
+                            .y(i)
+                            .sessionId(session.getId())
+                            .userId(k == 0 ? session.getFirstUserId() : session.getSecondUserId())
+                            .status(OK)
+                            .build());
+                }
+            }
+        }
+        mapCellRepository.saveAll(map);
     }
 }
