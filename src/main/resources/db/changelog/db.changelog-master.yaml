@@ -1,3 +1,5 @@
 databaseChangeLog:
   - include:
       file: db/changelog/create-session.yaml
+  - include:
+      file: db/changelog/create-map-cell.yaml
