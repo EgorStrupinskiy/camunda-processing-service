@@ -3,8 +3,11 @@ package com.azati.warshipprocessing.service;
 import com.azati.warshipprocessing.dto.SessionDTO;
 import com.azati.warshipprocessing.entity.Session;
 import com.azati.warshipprocessing.exception.NoSuchSessionException;
+import com.azati.warshipprocessing.exception.SameUsersInSessionException;
+import com.azati.warshipprocessing.exception.UserAlreadyInSessionException;
 import com.azati.warshipprocessing.mapper.SessionMapper;
 import com.azati.warshipprocessing.model.CreateSessionRequest;
+import com.azati.warshipprocessing.repository.MapCellRepository;
 import com.azati.warshipprocessing.repository.SessionRepository;
 import com.azati.warshipprocessing.service.impl.SessionServiceImpl;
 import org.junit.jupiter.api.Test;
@@ -40,6 +43,9 @@ public class SessionServiceTest {
 
     @Mock
     private SessionRepository sessionRepository;
+
+    @Mock
+    private MapCellRepository mapCellRepository;
 
     @InjectMocks
     private SessionServiceImpl sessionService;
@@ -136,7 +142,7 @@ public class SessionServiceTest {
         when(sessionRepository.save(any(Session.class))).thenReturn(existedSession);
         when(sessionMapper.toDTO(any(Session.class)))
                 .thenReturn(
-                new SessionDTO(existedSession.getId(), existedSession.getFirstUserId(), existedSession.getSecondUserId(), existedSession.getCreationDate()));
+                        new SessionDTO(existedSession.getId(), existedSession.getFirstUserId(), existedSession.getSecondUserId(), existedSession.getCreationDate()));
 
         SessionDTO sessionDTO = sessionService.create(request);
 
@@ -265,5 +271,31 @@ public class SessionServiceTest {
 
         assertThrows(NoSuchSessionException.class, () -> sessionService.getById(UUID.randomUUID()));
         verify(sessionRepository, times(1)).findById(any(UUID.class));
+    }
+
+    @Test
+    void shouldThrowExceptionForTwoUsersWithSameId() {
+        CreateSessionRequest request = CreateSessionRequest.builder()
+                .firstUserId(FIRST_USER_ID)
+                .secondUserId(FIRST_USER_ID)
+                .build();
+        assertThrows(SameUsersInSessionException.class, () -> sessionService.create(request));
+    }
+
+    @Test
+    void shouldThrowExceptionWhileCreatingToSessionsForOneUser() {
+        var existedSession = Session.builder()
+                .id(UUID.randomUUID())
+                .firstUserId(FIRST_USER_ID)
+                .build();
+        CreateSessionRequest request = CreateSessionRequest.builder()
+                .firstUserId(FIRST_USER_ID)
+                .build();
+
+        when(sessionRepository.findOpenSessions())
+                .thenReturn(List.of(existedSession));
+        assertThrows(UserAlreadyInSessionException.class, () -> sessionService.create(request));
+
+        verify(sessionRepository, times(1)).findOpenSessions();
     }
 }
